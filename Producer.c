@@ -1,23 +1,24 @@
-#include "protocol.h"
+#include "shmbuf.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <stdatomic.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <string.h>
 
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s /shm-path string\n", argv[0]);
+        fprintf(stderr, "Usage: %s /shm_path /string \n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    char *shmpath = argv[1];
+    char *path = argv[1];
     char *string = argv[2];
+
     size_t len = strlen(string);
 
     if (len > BUFFER_SIZE) {
@@ -25,10 +26,7 @@ main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    /* Open the existing shared memory object and map it
-       into the caller's address space. */
-
-    int fd = shm_open(shmpath, O_CREAT | O_EXCL | O_RDWR,
+    int fd = shm_open(path, O_CREAT | O_EXCL  | O_RDWR,
                       S_IRUSR | S_IWUSR);
     if (fd == -1)
         perror("shm_open");
@@ -36,22 +34,27 @@ main(int argc, char *argv[])
     if (ftruncate(fd, sizeof(struct shmbuf)) == -1)
         perror("ftruncate");
 
-    /* Map the object into the caller's address space. */
 
-    struct shmbuf *data = mmap(NULL, sizeof(*data),
+    struct shmbuf *data = (struct shmbuf *) mmap(NULL, sizeof(struct shmbuf),
                                PROT_READ | PROT_WRITE,
                                MAP_SHARED, fd, 0);
-    if (data == MAP_FAILED)
+    if (data == MAP_FAILED){
         perror("mmap");
-
+        exit(EXIT_FAILURE);
+    }
 
     data->size = len;
     memcpy(&data->buffer, string, len);
+    printf("Producer: release initial data\n");
 
 
-    munmap(data, SIZE);
+    if (munmap(data,sizeof ( struct shmbuf)) == -1) {
+        perror("munmap");
+        exit(EXIT_FAILURE);
+
+    };
 
     close(fd);
-
+    printf("Producer: job is done.\n");
     return EXIT_SUCCESS;
 }

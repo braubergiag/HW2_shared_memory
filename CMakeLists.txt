@@ -4,12 +4,11 @@ find_library(LIBRT rt)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(sender sender.c protocol.h )
-add_executable(reciever reciever.c protocol.h )
-#add_executable(request request.c  protocol.h )
-#add_executable(worker worker.c  protocol.h )
+add_executable(producer Producer.c shmbuf.h)
+add_executable(consumer Consumer.c shmbuf.h)
+
 if (LIBRT)
-    target_link_libraries(sender  ${LIBRT})
-    target_link_libraries(reciever  ${LIBRT})
+    target_link_libraries(producer  ${LIBRT})
+    target_link_libraries(consumer  ${LIBRT})
 
 endif()
