@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdatomic.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
